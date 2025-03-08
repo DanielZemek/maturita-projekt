@@ -1,8 +1,68 @@
+import time
 import pygame
 import random
-
+import sys
+import mysql.connector
 
 pygame.init()
+# Nastavení připojení k databázi
+DB_HOST = "dbs.spskladno.cz"
+DB_USER = "student6"
+DB_PASSWORD = "spsnet"
+DB_NAME = "vyuka6"
+
+def connect_db():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME
+    )
+
+def save_score_to_db(name, difficulty, score):
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    # Získání ID hráče
+    cursor.execute("SELECT id FROM 1hraci WHERE jmeno = %s", (name,))
+    player_id = cursor.fetchone()
+    if player_id is None:
+        cursor.execute("INSERT INTO 1hraci (jmeno) VALUES (%s)", (name,))
+        connection.commit()
+        player_id = cursor.lastrowid
+    else:
+        player_id = player_id[0]
+
+    # Získání ID obtížnosti
+    cursor.execute("SELECT id FROM 1obtiznosti WHERE difficulty_name = %s", (difficulty,))
+    difficulty_id = cursor.fetchone()
+    if difficulty_id is None:
+        cursor.execute("INSERT INTO 1obtiznosti (difficulty_name) VALUES (%s)", (difficulty,))
+        connection.commit()
+        difficulty_id = cursor.lastrowid
+    else:
+        difficulty_id = difficulty_id[0]
+
+    # Zkontroluj, zda už má hráč skóre pro tuto obtížnost
+    cursor.execute("SELECT skore FROM 1skore WHERE player_id = %s AND difficulty_id = %s", (player_id, difficulty_id))
+    existing_score = cursor.fetchone()
+
+    if existing_score:
+        # Pokud má hráč skóre a nové skóre je vyšší, přepíšeme ho
+        if score > existing_score[0]:
+            cursor.execute("UPDATE 1skore SET skore = %s WHERE player_id = %s AND difficulty_id = %s", (score, player_id, difficulty_id))
+            print(f"Updated score for {name} to {score} in {difficulty}")
+    else:
+        # Pokud hráč ještě nemá skóre, vložíme nové skóre
+        cursor.execute("INSERT INTO 1skore (player_id, difficulty_id, skore) VALUES (%s, %s, %s)", (player_id, difficulty_id, score))
+        print(f"Inserted new score for {name}: {score} in {difficulty}")
+    
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+
+
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -14,15 +74,120 @@ BLUE = (0, 0, 255)
 
 FONT = pygame.font.Font(None, 36)
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("Obstacle Game")
 
 clock = pygame.time.Clock()
 
+HIGH_SCORE_FILE_ez = "osobní rekordy - easy.txt"
+HIGH_SCORE_FILE_med = "osobní rekordy - medium.txt"
+HIGH_SCORE_FILE_ha = "osobní rekordy - hard.txt"
+
+
+def save_high_score_ez(player_name, score):
+    try:
+        # Načtení aktuálních skóre
+        with open(HIGH_SCORE_FILE_ez, "r") as file:
+            high_scores = file.readlines()
+
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+
+        # Seřaď skóre podle hodnoty (z nejvyššího)
+        high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
+        
+        # Udržuj pouze top 10 skóre
+        high_scores = high_scores[:10]
+
+        # Ulož výsledky
+        with open(HIGH_SCORE_FILE_ez, "w") as file:
+            file.writelines(high_scores)
+    except FileNotFoundError:
+        # Pokud soubor neexistuje, vytvoř ho
+        with open(HIGH_SCORE_FILE_ez, "w") as file:
+            file.write(f"{player_name}: {score}\n")
+
+def save_high_score_med(player_name, score):
+    try:
+        # Načtení aktuálních skóre
+        with open(HIGH_SCORE_FILE_med, "r") as file:
+            high_scores = file.readlines()
+
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+
+        # Seřaď skóre podle hodnoty (z nejvyššího)
+        high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
+        
+        # Udržuj pouze top 10 skóre
+        high_scores = high_scores[:10]
+
+        # Ulož výsledky
+        with open(HIGH_SCORE_FILE_med, "w") as file:
+            file.writelines(high_scores)
+    except FileNotFoundError:
+        # Pokud soubor neexistuje, vytvoř ho
+        with open(HIGH_SCORE_FILE_med, "w") as file:
+            file.write(f"{player_name}: {score}\n")
+
+def save_high_score_ha(player_name, score):
+    try:
+        # Načtení aktuálních skóre
+        with open(HIGH_SCORE_FILE_ha, "r") as file:
+            high_scores = file.readlines()
+
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+
+        # Seřaď skóre podle hodnoty (z nejvyššího)
+        high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
+        
+        # Udržuj pouze top 10 skóre
+        high_scores = high_scores[:10]
+
+        # Ulož výsledky
+        with open(HIGH_SCORE_FILE_ha, "w") as file:
+            file.writelines(high_scores)
+    except FileNotFoundError:
+        # Pokud soubor neexistuje, vytvoř ho
+        with open(HIGH_SCORE_FILE_ha, "w") as file:
+            file.write(f"{player_name}: {score}\n")
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface([1, 1])
+        self.image = pygame.Surface([50, 50])
         self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2
@@ -85,7 +250,7 @@ class ObstacleManager(pygame.sprite.Sprite):
             speed_x = -self.obstacle_speed
             speed_y = 0
 
-        new_obstacle = Obstacle(x, y, 25, 25, speed_x, speed_y)
+        new_obstacle = Obstacle(x, y, 50, 50, speed_x, speed_y)
         self.obstacles.add(new_obstacle)
 
 class Obstacle(pygame.sprite.Sprite):
@@ -124,21 +289,63 @@ def game_over_screen(time_alive):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                
+                sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 if respawn_rect.collidepoint(mouse_pos):
                     return True
 
+def get_player_name():
+    input_active = True
+    name = ''
+    while input_active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    input_active = False
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                else:
+                    name += event.unicode
+        screen.fill((0, 0, 0))
+        name_text = FONT.render(f"Enter your name: {name}", True, WHITE)
+        screen.blit(name_text, (SCREEN_WIDTH // 2 - name_text.get_width() // 2, SCREEN_HEIGHT // 2))
+        pygame.display.flip()
+    return name
+
+player_name = get_player_name()
+
+def difficulty_selection():
+    screen.fill((0, 0, 0))
+    easy_text = FONT.render("Easy", True, GREEN)
+    medium_text = FONT.render("Medium", True, BLUE)
+    hard_text = FONT.render("Hard", True, RED)
+    easy_rect = easy_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+    medium_rect = medium_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    hard_rect = hard_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+    screen.blit(easy_text, easy_rect)
+    screen.blit(medium_text, medium_rect)
+    screen.blit(hard_text, hard_rect)
+    pygame.display.flip()
 
     waiting = True
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                
-            
-
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if easy_rect.collidepoint(mouse_pos):
+                    return 'easy'
+                elif medium_rect.collidepoint(mouse_pos):
+                    return 'medium'
+                elif hard_rect.collidepoint(mouse_pos):
+                    return 'hard'
+# Hlavní herní smyčka
 all_sprites = pygame.sprite.Group()
 obstacle_manager = ObstacleManager()
 player = Player()
@@ -146,8 +353,16 @@ all_sprites.add(player)
 
 start_time = pygame.time.get_ticks()
 while True:
-    obstacle_manager.spawn_interval = 1
-    obstacle_manager.obstacle_speed = 1
+    difficulty = difficulty_selection()
+    if difficulty == 'easy':
+        obstacle_manager.spawn_interval = 100
+        obstacle_manager.obstacle_speed = 4
+    elif difficulty == 'medium':
+        obstacle_manager.spawn_interval = 50
+        obstacle_manager.obstacle_speed = 5
+    elif difficulty == 'hard':
+        obstacle_manager.spawn_interval = 30
+        obstacle_manager.obstacle_speed = 6
 
     game_over = False
     player.rect.centerx = SCREEN_WIDTH // 2 
@@ -161,7 +376,7 @@ while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                
+                sys.exit()
 
         if not game_over:
             hits = pygame.sprite.spritecollide(player, obstacle_manager.obstacles, False)
@@ -178,11 +393,28 @@ while True:
             time_alive = pygame.time.get_ticks() - start_time
             time_text = FONT.render("Time: {} seconds".format(time_alive // 1000), True, WHITE)
             screen.blit(time_text, (10, 10))
+
+            
             pygame.display.flip()
             clock.tick(60)
 
         if game_over:
+            if difficulty == 'easy':
+                save_high_score_ez(player_name,time_alive/1000)
+
+            elif difficulty == 'medium':
+                save_high_score_med(player_name, float(time_alive/1000))
+
+            elif difficulty == 'hard':
+                save_high_score_ha(player_name, float(time_alive/1000))
+
+            save_score_to_db(player_name, difficulty, float(time_alive/1000))
+
             if game_over_screen(time_alive):
                 break
+            
+            high_score_text = FONT.render("Přežil jsi: {} sekund".format(time_alive // 1000), True, WHITE)
+            screen.blit(high_score_text, (10, 40))
 
 pygame.quit()
+sys.exit()
