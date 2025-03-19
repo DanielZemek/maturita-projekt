@@ -3,6 +3,7 @@ import pygame
 import random
 import sys
 import mysql.connector
+import hashlib
 
 pygame.init()
 # Nastavení připojení k databázi
@@ -27,9 +28,7 @@ def save_score_to_db(name, difficulty, score):
     cursor.execute("SELECT id FROM 1hraci WHERE jmeno = %s", (name,))
     player_id = cursor.fetchone()
     if player_id is None:
-        cursor.execute("INSERT INTO 1hraci (jmeno) VALUES (%s)", (name,))
-        connection.commit()
-        player_id = cursor.lastrowid
+        pass
     else:
         player_id = player_id[0]
 
@@ -295,6 +294,103 @@ def game_over_screen(time_alive):
                 if respawn_rect.collidepoint(mouse_pos):
                     return True
 
+def register_player():
+    screen.fill((0, 0, 0))
+    name_text = FONT.render("Zadejte jméno: ", True, WHITE)
+    screen.blit(name_text, (SCREEN_WIDTH // 2 - name_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+    pygame.display.flip()
+    
+    name = get_player_name()
+
+    # Kontrola, zda jméno již existuje
+    connection = connect_db()
+    cursor = connection.cursor()
+    cursor.execute("SELECT id FROM 1hraci WHERE jmeno = %s", (name,))
+    if cursor.fetchone() :
+        # Pokud jméno existuje, informuj uživatele a vrať ho zpět na registraci
+        error_text = FONT.render("Toto jméno je už zaregistrované.", True, RED)
+        screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+        time.sleep(2)
+        return register_player()
+    elif name == '' :
+        error_text = FONT.render("Není možné.", True, RED)
+        screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+        time.sleep(2)
+        return register_player()
+
+    # Zadání a kontrola hesla
+    password = get_password("Zadejte heslo: ")
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()  # Hashe hesla
+
+    # Uložení hráče do databáze
+    cursor.execute("INSERT INTO 1hraci (jmeno, heslo) VALUES (%s, %s)", (name, hashed_password))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    print(f"Player {name} registered successfully.")
+    return name
+
+
+
+def get_password(prompt):
+    input_active = True
+    password = ''
+    while input_active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    input_active = False
+                elif event.key == pygame.K_BACKSPACE:
+                    password = password[:-1]
+                else:
+                    password += event.unicode
+        screen.fill((0, 0, 0))
+        password_text = FONT.render(f"{prompt} {password}", True, WHITE)
+        screen.blit(password_text, (SCREEN_WIDTH // 2 - password_text.get_width() // 2, SCREEN_HEIGHT // 2))
+        pygame.display.flip()
+    if password =='' :
+        error_text = FONT.render("Musíme zadat heslo.", True, RED)
+        screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+        time.sleep(2)
+        return get_password("Zadejte heslo:")
+    return password
+
+def login_player():
+    screen.fill((0, 0, 0))
+    name_text = FONT.render("Zadejte jméno: ", True, WHITE)
+    screen.blit(name_text, (SCREEN_WIDTH // 2 - name_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+    pygame.display.flip()
+
+    name = get_player_name()
+
+    # Zadání hesla
+    password = get_password("Zadejte heslo: ")
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()  # Hashe hesla
+
+    # Kontrola přihlášení
+    connection = connect_db()
+    cursor = connection.cursor()
+    cursor.execute("SELECT id FROM 1hraci WHERE jmeno = %s AND heslo = %s", (name, hashed_password))
+    if cursor.fetchone():
+        cursor.close()
+        connection.close()
+        print(f"Player {name} logged in successfully.")
+        return name
+    else:
+        # Pokud přihlášení selže
+        error_text = FONT.render("Špatné heslo nebo jméno.", True, RED)
+        screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+        time.sleep(2)
+        login_player()
+
 def get_player_name():
     input_active = True
     name = ''
@@ -316,13 +412,37 @@ def get_player_name():
         pygame.display.flip()
     return name
 
-player_name = get_player_name()
+def main_menu():
+    screen.fill((0, 0, 0))
+    register_text = FONT.render("Register", True, GREEN)
+    login_text = FONT.render("Login", True, BLUE)
+    register_rect = register_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+    login_rect = login_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+    screen.blit(register_text, register_rect)
+    screen.blit(login_text, login_rect)
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if register_rect.collidepoint(mouse_pos):
+                    return "register"
+                elif login_rect.collidepoint(mouse_pos):
+                    return "login"
+
+
+
 
 def difficulty_selection():
     screen.fill((0, 0, 0))
-    easy_text = FONT.render("Easy", True, GREEN)
-    medium_text = FONT.render("Medium", True, BLUE)
-    hard_text = FONT.render("Hard", True, RED)
+    easy_text = FONT.render("Lehká", True, GREEN)
+    medium_text = FONT.render("Střední", True, BLUE)
+    hard_text = FONT.render("Těžká", True, RED)
     easy_rect = easy_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
     medium_rect = medium_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     hard_rect = hard_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
@@ -351,9 +471,17 @@ obstacle_manager = ObstacleManager()
 player = Player()
 all_sprites.add(player)
 
+choice = main_menu()
+if choice == "register":
+    player_name = register_player()
+elif choice == "login":
+    player_name = login_player()
+
 start_time = pygame.time.get_ticks()
 while True:
+    
     difficulty = difficulty_selection()
+
     if difficulty == 'easy':
         obstacle_manager.spawn_interval = 100
         obstacle_manager.obstacle_speed = 4
