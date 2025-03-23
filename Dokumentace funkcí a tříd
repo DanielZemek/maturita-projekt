@@ -1,0 +1,142 @@
+connect_db()
+    """
+    Vytváří připojení k databázi.
+
+    Returns:
+        mysql.connector.connection_cext.CMySQLConnection: Objekt připojení k databázi.
+    """
+
+save_score_to_db(name, difficulty, score)
+    """
+    Ukládá skóre hráče do databáze.
+
+    Args:
+        name (str): Jméno hráče.
+        difficulty (str): Název obtížnosti.
+        score (float): Skóre hráče.
+
+    Returns:
+        None
+    """
+
+save_high_score_ez/med/ha(player_name, score)
+    """
+    Ukládá skóre hráče do souboru s nejlepšími výsledky pro danou úroveň.
+
+    Args:
+        player_name (str): Jméno hráče.
+        score (float): Skóre hráče.
+
+    Returns:
+        None
+    """
+
+game_over_screen(time_alive)
+    """
+    Zobrazí obrazovku "Game Over" a umožní hráči respawn.
+
+    Args:
+        time_alive (int): Čas přežití hráče v milisekundách.
+
+    Returns:
+        bool: True, pokud hráč klikne na "Respawn".
+    """
+
+register_player()
+    """
+    Registruje nového hráče do databáze.
+
+    Returns:
+        str: Jméno zaregistrovaného hráče.
+    """
+
+get_password(prompt)
+    """
+    Získává heslo od uživatele pomocí textového vstupu.
+
+    Args:
+        prompt (str): Výzva zobrazená uživateli.
+
+    Returns:
+        str: Heslo zadané uživatelem.
+    """
+
+login_player()
+    """
+    Přihlašuje hráče ověřením jména a hesla.
+
+    Returns:
+        str: Jméno přihlášeného hráče.
+    """
+
+get_player_name()
+    """
+    Získává jméno hráče pomocí textového vstupu.
+
+    Returns:
+        str: Jméno hráče.
+    """
+
+main_menu()
+    """
+    Zobrazuje hlavní menu hry.
+
+    Returns:
+        str: Volba hráče, buď "register" nebo "login".
+    """
+
+difficulty_selection()
+    """
+    Zobrazuje nabídku výběru obtížnosti.
+
+    Returns:
+        str: Název vybrané obtížnosti (easy, medium, hard).
+    """
+
+
+Třídy
+
+Player
+    """
+    Reprezentuje hráče ve hře.
+
+    Attributes:
+        image (pygame.Surface): Povrch hráče.
+        rect (pygame.Rect): Obdélník určující polohu a rozměry hráče.
+        speed (int): Rychlost pohybu hráče.
+
+    Methods:
+        update(): Aktualizuje pozici hráče na základě vstupu od klávesnice.
+    """
+
+ObstacleManager
+    """
+    Spravuje překážky ve hře.
+
+    Attributes:
+        obstacles (pygame.sprite.Group): Skupina překážek.
+        spawn_timer (int): Časovač pro spawn nových překážek.
+        spawn_interval (int): Interval mezi spawnováním překážek.
+        obstacle_speed (float): Rychlost překážek.
+        difficulty_increment_timer (int): Časovač na zvýšení obtížnosti.
+
+    Methods:
+        update(): Aktualizuje stav překážek a zvyšuje obtížnost.
+        increase_difficulty(): Zvyšuje rychlost a frekvenci překážek.
+        draw(screen): Kreslí překážky na obrazovku.
+        spawn_obstacle(): Vytváří novou překážku.
+    """
+
+Obstacle
+    """
+    Reprezentuje překážku ve hře.
+
+    Attributes:
+        image (pygame.Surface): Povrch překážky.
+        rect (pygame.Rect): Obdélník určující polohu a rozměry překážky.
+        speed_x (float): Horizontální rychlost překážky.
+        speed_y (float): Vertikální rychlost překážky.
+
+    Methods:
+        update(): Aktualizuje polohu překážky a odstraňuje ji, pokud opustí obrazovku.
+    """
