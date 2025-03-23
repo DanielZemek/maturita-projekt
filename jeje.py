@@ -177,16 +177,29 @@ class ObstacleManager(pygame.sprite.Sprite):
         super().__init__()
         self.obstacles = pygame.sprite.Group()
         self.spawn_timer = 0
-        self.spawn_interval = 120 
+        self.spawn_interval = 120
         self.obstacle_speed = 5
+        self.difficulty_increment_timer = 0  # Nový časovač na zvýšení obtížnosti
 
     def update(self):
         self.spawn_timer += 1
+        self.difficulty_increment_timer += 1  # Sleduj čas od posledního zvýšení obtížnosti
+
         if self.spawn_timer >= self.spawn_interval:
             self.spawn_obstacle()
             self.spawn_timer = 0
 
+        if self.difficulty_increment_timer >= 300:  # Každých 300 snímků zvýší obtížnost
+            self.increase_difficulty()
+            self.difficulty_increment_timer = 0
+
         self.obstacles.update()
+
+    def increase_difficulty(self):
+        # Zrychlí překážky a zvýší frekvenci jejich spawnování
+        self.obstacle_speed += 0.2
+        if self.spawn_interval > 20:  # Ujisti se, že interval neklesne pod minimální hodnotu
+            self.spawn_interval -= 2
 
     def draw(self, screen):
         self.obstacles.draw(screen)
@@ -453,6 +466,9 @@ while True:
     elif difficulty == 'hard':
         obstacle_manager.spawn_interval = 30
         obstacle_manager.obstacle_speed = 6
+
+    obstacle_manager.difficulty_increment_timer = 0  # Reset časovače obtížnosti
+
 
     game_over = False
     player.rect.centerx = SCREEN_WIDTH // 2 
