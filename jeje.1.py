@@ -85,8 +85,18 @@ def save_high_score_ez(player_name, score):
         with open(HIGH_SCORE_FILE_ez, "r") as file:
             high_scores = file.readlines()
 
-        
-        high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
 
         # Seřaď skóre podle hodnoty (z nejvyššího)
         high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
@@ -108,8 +118,18 @@ def save_high_score_med(player_name, score):
         with open(HIGH_SCORE_FILE_med, "r") as file:
             high_scores = file.readlines()
 
-        
-        high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
 
         # Seřaď skóre podle hodnoty (z nejvyššího)
         high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
@@ -131,8 +151,18 @@ def save_high_score_ha(player_name, score):
         with open(HIGH_SCORE_FILE_ha, "r") as file:
             high_scores = file.readlines()
 
-        
-        high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
+        # Zkontroluj, zda už hráč má skóre
+        player_found = False
+        for i, line in enumerate(high_scores):
+            name, current_score = line.strip().split(": ")
+            if name == player_name:
+                if float(current_score) < score:  # Pokud je nové skóre lepší
+                    high_scores[i] = f"{player_name}: {score}\n"  # Uprav skóre
+                player_found = True
+                break
+
+        if not player_found:
+            high_scores.append(f"{player_name}: {score}\n")  # Přidej nového hráče
 
         # Seřaď skóre podle hodnoty (z nejvyššího)
         high_scores.sort(key=lambda x: float(x.split(": ")[1]), reverse=True)
@@ -508,27 +538,3 @@ while True:
 
 pygame.quit()
 sys.exit()
-
-#1hraci	CREATE TABLE `1hraci` (
-# `id` int(11) NOT NULL AUTO_INCREMENT,
-# `jmeno` text DEFAULT NULL,
-#`heslo` text DEFAULT NULL,
-#`is_admin` tinyint(1) DEFAULT NULL,
-# PRIMARY KEY (`id`),
-# UNIQUE KEY `jmeno` (`jmeno`) USING HASH
-#) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci
-#1obtiznosti	CREATE TABLE `1obtiznosti` (
-# `id` int(11) NOT NULL AUTO_INCREMENT,
-# `difficulty_name` text DEFAULT NULL,
-# PRIMARY KEY (`id`),
-# UNIQUE KEY `difficulty_name` (`difficulty_name`) USING HASH
-#) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci
-#1skore	CREATE TABLE `1skore` (
-# `player_id` int(11) NOT NULL,
-# `difficulty_id` int(11) NOT NULL,
-# `skore` float DEFAULT NULL,
-# PRIMARY KEY (`player_id`,`difficulty_id`),
-# KEY `difficulty_id` (`difficulty_id`),
-# CONSTRAINT `1skore_ibfk_1` FOREIGN KEY (`player_id`) REFERENCES `1hraci` (`id`),
-# CONSTRAINT `1skore_ibfk_2` FOREIGN KEY (`difficulty_id`) REFERENCES `1obtiznosti` (`id`)
-#) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci

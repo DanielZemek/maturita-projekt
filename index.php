@@ -204,6 +204,9 @@ if (isset($_POST['register'])) {
         h1 {
             text-align: center;
         }
+        p {
+            text-align: center;
+        }
         /* Modal (vyskakovací okno) */
         .modal {
             display: none; 
@@ -397,7 +400,24 @@ if (isset($_POST['register'])) {
             </tr>
         <?php endforeach; ?>
     </table>
+    <h1>Popis programu</h1>
+    <p>Tento program je jednoduchá hra vytvořená pomocí knihovny pygame. Hráč se pohybuje po obrazovce, vyhýbá se překážkám a snaží se přežít co nejdéle.</p>
+    <p><strong>Mezi je základní funkce paťrí:</strong></p>
+    <p>1. Registrace a příhlášení se zašifrováním hesla</p>
+    <p>2. Výběr jedné ze tří obtížností</p>
+    <p>3. Ukládání vašich nejlepších výsledků do databáze, Ukládání deseti nejlepších her do lokálních textových dokumentů</p>
+    <h1>Knihovny</h1>
+    <p>pygame, random, sys, time, mysql.connector, hashlib</p>
+    <h1>Vývojový diagram</h1>
+    <p><img src="./Vyvojový diagram.png"></p>
+    <h1>ER diagram</h1>
+    <p><img src="./ER.png"></p>
 
+    <h1>Seznam autorů</h1>
+    <p>Daniel Zemek</p>
+    <h1>Odkaz na github</h1>
+    <p><a href="https://github.com/DanielZemek/maturita-projekt" target="_blank" style="color: black;">GitHub zde</a></p>
+    
 </div>
 
 <script>
